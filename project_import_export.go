@@ -270,7 +270,7 @@ func (s *ProjectImportExportService) ImportFile(opt *ImportFileOptions, options 
 	// So it writes the ending boundary
 	multiPartWriter.Close()
 
-	req, err := s.client.NewRequest(http.MethodPost, "groups/import", nil, options)
+	req, err := s.client.NewRequest(http.MethodPost, "projects/import", nil, options)
 	if err != nil {
 		return nil, nil, err
 	}
