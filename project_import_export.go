@@ -19,7 +19,11 @@ package gitlab
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -173,18 +177,104 @@ type ImportFileOptions struct {
 // GitLab API docs:
 // https://docs.gitlab.com/ce/api/project_import_export.html#import-a-file
 func (s *ProjectImportExportService) ImportFile(opt *ImportFileOptions, options ...RequestOptionFunc) (*ImportStatus, *Response, error) {
-	req, err := s.client.NewRequest(http.MethodPost, "projects/import", opt, options)
+	// Open the file
+	file, err := os.Open(*opt.File)
+	if err != nil {
+		fmt.Println(err)
+	}
+	// Close the file later
+	defer file.Close()
+
+	// Buffer to store our request body as bytes
+	var requestBody bytes.Buffer
+
+	// Create a multipart writer
+	multiPartWriter := multipart.NewWriter(&requestBody)
+
+	// Initialize the file field
+	fileWriter, err := multiPartWriter.CreateFormFile("file", "group.*.tar.gz")
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil, err
+	}
+
+	// Copy the actual file content to the field field's writer
+	_, err = io.Copy(fileWriter, file)
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil, err
+	}
+
+	// Populate other fields
+	fw, err := multiPartWriter.CreateFormField("namespace")
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil, err
+	}
+
+	_, err = fw.Write([]byte(*opt.Namespace))
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil, err
+	}
+
+	fw, err = multiPartWriter.CreateFormField("path")
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil, err
+	}
+
+	_, err = fw.Write([]byte(*opt.Path))
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil, err
+	}
+
+	fw, err = multiPartWriter.CreateFormField("overwrite")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	_, err = fw.Write([]byte(*strconv.FormatBool(opt.Overwrite)))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fw, err = multiPartWriter.CreateFormField("override_params")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	_, err = fw.Write([]byte(*opt.OverrideParams))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// We completed adding the file and the fields, let's close the multipart writer
+	// So it writes the ending boundary
+	multiPartWriter.Close()
+
+	req, err := s.client.NewRequest(http.MethodPost, "groups/import", nil, options)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	is := new(ImportStatus)
-	resp, err := s.client.Do(req, is)
+	// Set the buffer as the request body.
+	if err = req.SetBody(&requestBody); err != nil {
+		return nil, nil, err
+	}
+
+	// We need to set the content type from the writer, it includes necessary boundary as well
+	req.Header.Set("Content-Type", multiPartWriter.FormDataContentType())
+
+	// Do the request
+	var status = new(ImportStatus)
+	resp, err := s.client.Do(req, status)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return is, resp, err
+	return status, resp, err
 }
 
 // ImportStatus get the status of an import.

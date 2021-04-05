@@ -859,7 +859,7 @@ func (s *GroupsService) GroupImport(opt *GroupImportOptions, options ...RequestO
 	multiPartWriter := multipart.NewWriter(&requestBody)
 
 	// Initialize the file field
-	fileWriter, err := multiPartWriter.CreateFormFile("file", "grpup..tar.gz")
+	fileWriter, err := multiPartWriter.CreateFormFile("file", "group.*.tar.gz")
 	if err != nil {
 		fmt.Println(err)
 		return nil, nil, err
