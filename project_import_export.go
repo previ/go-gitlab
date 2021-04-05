@@ -166,6 +166,7 @@ func (s *ProjectImportExportService) ExportDownload(pid interface{}, options ...
 // https://docs.gitlab.com/ce/api/project_import_export.html#import-a-file
 type ImportFileOptions struct {
 	Namespace      *string               `url:"namespace,omitempty" json:"namespace,omitempty"`
+	Name           *string               `url:"name,omitempty" json:"name,omitempty"`
 	File           *string               `url:"file,omitempty" json:"file,omitempty"`
 	Path           *string               `url:"path,omitempty" json:"path,omitempty"`
 	Overwrite      *bool                 `url:"overwrite,omitempty" json:"overwrite,omitempty"`
@@ -228,6 +229,18 @@ func (s *ProjectImportExportService) ImportFile(opt *ImportFileOptions, options 
 	if err != nil {
 		fmt.Println(err)
 		return nil, nil, err
+	}
+
+	if opt.Name != nil {
+		fw, err = multiPartWriter.CreateFormField("name")
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		_, err = fw.Write([]byte(*opt.Name))
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	if opt.Overwrite != nil {
