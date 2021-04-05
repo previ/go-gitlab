@@ -235,7 +235,7 @@ func (s *ProjectImportExportService) ImportFile(opt *ImportFileOptions, options 
 		fmt.Println(err)
 	}
 
-	_, err = fw.Write([]byte(*strconv.FormatBool(opt.Overwrite)))
+	_, err = fw.Write([]byte(strconv.FormatBool(*opt.Overwrite)))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -245,7 +245,7 @@ func (s *ProjectImportExportService) ImportFile(opt *ImportFileOptions, options 
 		fmt.Println(err)
 	}
 
-	_, err = fw.Write([]byte(*opt.OverrideParams))
+	_, err = fw.Write([]byte(Stringify(opt.OverrideParams)))
 	if err != nil {
 		fmt.Println(err)
 	}
