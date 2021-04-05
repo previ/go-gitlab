@@ -230,26 +230,29 @@ func (s *ProjectImportExportService) ImportFile(opt *ImportFileOptions, options 
 		return nil, nil, err
 	}
 
-	fw, err = multiPartWriter.CreateFormField("overwrite")
-	if err != nil {
-		fmt.Println(err)
+	if opt.Overwrite != nil {
+		fw, err = multiPartWriter.CreateFormField("overwrite")
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		_, err = fw.Write([]byte(strconv.FormatBool(*opt.Overwrite)))
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
-	_, err = fw.Write([]byte(strconv.FormatBool(*opt.Overwrite)))
-	if err != nil {
-		fmt.Println(err)
-	}
+	if opt.OverrideParams != nil {
+		fw, err = multiPartWriter.CreateFormField("override_params")
+		if err != nil {
+			fmt.Println(err)
+		}
 
-	fw, err = multiPartWriter.CreateFormField("override_params")
-	if err != nil {
-		fmt.Println(err)
+		_, err = fw.Write([]byte(Stringify(opt.OverrideParams)))
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
-
-	_, err = fw.Write([]byte(Stringify(opt.OverrideParams)))
-	if err != nil {
-		fmt.Println(err)
-	}
-
 	// We completed adding the file and the fields, let's close the multipart writer
 	// So it writes the ending boundary
 	multiPartWriter.Close()
